@@ -1,0 +1,136 @@
+/* =========================================================
+   HOSPITAL MANAGEMENT ANALYSIS – KPI & ANALYTICS SQL
+   ========================================================= */
+
+/* 1. TOTAL PATIENTS */
+SELECT COUNT(DISTINCT PatientID) AS Total_Patients
+FROM Hospital_Management;
+
+
+/* 2. TOTAL DOCTORS BY SPECIALIZATION */
+SELECT
+    Doctor_Specialization,
+    COUNT(DISTINCT DoctorID) AS Total_Doctors
+FROM Hospital_Management
+GROUP BY Doctor_Specialization
+ORDER BY Total_Doctors DESC;
+
+
+/* 3. PATIENT COUNT BY DEPARTMENT */
+SELECT
+    Department,
+    COUNT(DISTINCT PatientID) AS Patient_Count
+FROM Hospital_Management
+GROUP BY Department
+ORDER BY Patient_Count DESC;
+
+
+/* 4. DISEASE FREQUENCY */
+SELECT
+    Disease,
+    COUNT(*) AS Disease_Count
+FROM Hospital_Management
+GROUP BY Disease
+ORDER BY Disease_Count DESC;
+
+
+/* 5. DISEASE TRENDS BY AGE GROUP */
+SELECT
+    Disease,
+    CASE
+        WHEN Age < 18 THEN '0-17'
+        WHEN Age BETWEEN 18 AND 35 THEN '18-35'
+        WHEN Age BETWEEN 36 AND 55 THEN '36-55'
+        WHEN Age BETWEEN 56 AND 75 THEN '56-75'
+        ELSE '75+'
+    END AS Age_Group,
+    COUNT(*) AS Total_Cases
+FROM Hospital_Management
+GROUP BY
+    Disease,
+    CASE
+        WHEN Age < 18 THEN '0-17'
+        WHEN Age BETWEEN 18 AND 35 THEN '18-35'
+        WHEN Age BETWEEN 36 AND 55 THEN '36-55'
+        WHEN Age BETWEEN 56 AND 75 THEN '56-75'
+        ELSE '75+'
+    END;
+
+
+/* 6. PAYMENT MODE DISTRIBUTION */
+SELECT
+    Payment_Mode,
+    COUNT(*) AS Transactions,
+    ROUND(
+        COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (),
+        2
+    ) AS Percentage
+FROM Hospital_Management
+GROUP BY Payment_Mode;
+
+
+/* 7. TOTAL HOSPITAL REVENUE */
+SELECT
+    SUM(Payment_Amount) AS Total_Revenue
+FROM Hospital_Management;
+
+
+/* 8. REVENUE BY PAYMENT MODE */
+SELECT
+    Payment_Mode,
+    SUM(Payment_Amount) AS Revenue
+FROM Hospital_Management
+GROUP BY Payment_Mode
+ORDER BY Revenue DESC;
+
+
+/* 9. STATE-WISE REVENUE CONTRIBUTION */
+SELECT
+    State,
+    SUM(Payment_Amount) AS State_Revenue,
+    ROUND(
+        SUM(Payment_Amount) * 100.0 /
+        SUM(SUM(Payment_Amount)) OVER (),
+        2
+    ) AS Revenue_Percentage
+FROM Hospital_Management
+GROUP BY State
+ORDER BY State_Revenue DESC;
+
+
+/* 10. ADMISSION VS DISCHARGE TRENDS (MONTHLY) */
+SELECT
+    YEAR(Admission_Date) AS Year,
+    MONTH(Admission_Date) AS Month,
+    COUNT(*) AS Admissions
+FROM Hospital_Management
+GROUP BY YEAR(Admission_Date), MONTH(Admission_Date)
+ORDER BY Year, Month;
+
+
+/* 11. AVERAGE LENGTH OF STAY (DAYS) */
+SELECT
+    ROUND(AVG(DATEDIFF(day, Admission_Date, Discharge_Date)), 2)
+        AS Avg_Length_of_Stay
+FROM Hospital_Management
+WHERE Discharge_Date IS NOT NULL;
+
+
+/* 12. DOCTOR WORKLOAD (PATIENTS PER DOCTOR) */
+SELECT
+    DoctorID,
+    Doctor_Specialization,
+    COUNT(DISTINCT PatientID) AS Patients_Handled
+FROM Hospital_Management
+GROUP BY DoctorID, Doctor_Specialization
+ORDER BY Patients_Handled DESC;
+
+
+/* 13. SEASONAL ADMISSION TRENDS */
+SELECT
+    DATENAME(MONTH, Admission_Date) AS Month_Name,
+    COUNT(*) AS Admissions
+FROM Hospital_Management
+GROUP BY DATENAME(MONTH, Admission_Date),
+         MONTH(Admission_Date)
+ORDER BY MONTH(Admission_Date);
